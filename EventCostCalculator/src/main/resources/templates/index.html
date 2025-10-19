@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Cost Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">Event Cost Calculator</h1>
+            <p class="subtitle">Professional event planning</p>
+        </header>
+
+        <div class="main-content">
+            <div class="form-card">
+                <h2>Calculate Your Event Cost</h2>
+                
+                <div th:if="${error}" class="error-message">
+                    <span th:text="${error}"></span>
+                </div>
+                
+                <form th:action="@{/calculate}" th:object="${calculationRequest}" method="post">
+                    <div class="form-group">
+                        <label for="guests">Number of Guests</label>
+                        <input type="number" id="guests" th:field="*{guests}" 
+                               min="10" max="500" required
+                               placeholder="Enter number of guests (10-500)">
+                        <div th:if="${#fields.hasErrors('guests')}" class="field-error">
+                            <span th:errors="*{guests}"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Event Type</label>
+                        <div class="radio-group">
+                            <label class="radio-card">
+                                <input type="radio" th:field="*{eventType}" value="BIRTHDAY" required>
+                                <span class="radio-content">
+                                    <span class="radio-title">🎂 Birthday</span>
+                                    <span class="radio-desc">Standard pricing</span>
+                                </span>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" th:field="*{eventType}" value="WEDDING" required>
+                                <span class="radio-content">
+                                    <span class="radio-title">💍 Wedding</span>
+                                    <span class="radio-desc">Premium +80%</span>
+                                </span>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" th:field="*{eventType}" value="CORPORATE" required>
+                                <span class="radio-content">
+                                    <span class="radio-title">🏢 Corporate</span>
+                                    <span class="radio-desc">Business +30%</span>
+                                </span>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" th:field="*{eventType}" value="ANNIVERSARY" required>
+                                <span class="radio-content">
+                                    <span class="radio-title">💐 Anniversary</span>
+                                    <span class="radio-desc">Special +20%</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Service Tier</label>
+                        <div class="tier-group">
+                            <label class="tier-card">
+                                <input type="radio" th:field="*{serviceTier}" value="REGULAR" required>
+                                <span class="tier-content">
+                                    <span class="tier-title">Regular</span>
+                                    <span class="tier-price">₹300-500/person</span>
+                                    <span class="tier-desc">Essential services</span>
+                                </span>
+                            </label>
+                            <label class="tier-card">
+                                <input type="radio" th:field="*{serviceTier}" value="PREMIUM" required>
+                                <span class="tier-content">
+                                    <span class="tier-title">Premium</span>
+                                    <span class="tier-price">₹500-800/person</span>
+                                    <span class="tier-desc">Enhanced experience</span>
+                                </span>
+                            </label>
+                            <label class="tier-card">
+                                <input type="radio" th:field="*{serviceTier}" value="DELUXE" required>
+                                <span class="tier-content">
+                                    <span class="tier-title">Deluxe</span>
+                                    <span class="tier-price">₹800-1,500/person</span>
+                                    <span class="tier-desc">Luxury celebration</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Calculate Cost</button>
+                </form>
+            </div>
+
+            <div th:if="${result}" class="result-card">
+                <h2>Cost Breakdown</h2>
+                
+                <div class="result-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Event Type</span>
+                        <span class="summary-value" th:text="${result.eventType}"></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Service Tier</span>
+                        <span class="summary-value" th:text="${result.serviceTier}"></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Guests</span>
+                        <span class="summary-value" th:text="${result.guests}"></span>
+                    </div>
+                </div>
+
+                <div class="cost-items">
+                    <div class="cost-item">
+                        <div class="cost-header">
+                            <span class="cost-icon">🎨</span>
+                            <span class="cost-name">Decorations</span>
+                        </div>
+                        <div class="cost-details">
+                            <span class="cost-amount" th:text="${service.formatIndianCurrency(result.costBreakdown.decorations * result.costBreakdown.eventTypeMultiplier)}"></span>
+                            <span class="cost-percent" th:text="${#numbers.formatDecimal(result.costBreakdown.decorationsPercentage, 1, 1)} + '%'"></span>
+                        </div>
+                    </div>
+
+                    <div class="cost-item">
+                        <div class="cost-header">
+                            <span class="cost-icon">🍽️</span>
+                            <span class="cost-name">Catering</span>
+                        </div>
+                        <div class="cost-details">
+                            <span class="cost-amount" th:text="${service.formatIndianCurrency(result.costBreakdown.catering * result.costBreakdown.eventTypeMultiplier)}"></span>
+                            <span class="cost-percent" th:text="${#numbers.formatDecimal(result.costBreakdown.cateringPercentage, 1, 1)} + '%'"></span>
+                        </div>
+                    </div>
+
+                    <div class="cost-item">
+                        <div class="cost-header">
+                            <span class="cost-icon">🎵</span>
+                            <span class="cost-name">Music & Entertainment</span>
+                        </div>
+                        <div class="cost-details">
+                            <span class="cost-amount" th:text="${service.formatIndianCurrency(result.costBreakdown.musicEntertainment * result.costBreakdown.eventTypeMultiplier)}"></span>
+                            <span class="cost-percent" th:text="${#numbers.formatDecimal(result.costBreakdown.musicPercentage, 1, 1)} + '%'"></span>
+                        </div>
+                    </div>
+
+                    <div class="cost-item">
+                        <div class="cost-header">
+                            <span class="cost-icon">📸</span>
+                            <span class="cost-name">Photography</span>
+                        </div>
+                        <div class="cost-details">
+                            <span class="cost-amount" th:text="${service.formatIndianCurrency(result.costBreakdown.photography * result.costBreakdown.eventTypeMultiplier)}"></span>
+                            <span class="cost-percent" th:text="${#numbers.formatDecimal(result.costBreakdown.photographyPercentage, 1, 1)} + '%'"></span>
+                        </div>
+                    </div>
+
+                    <div class="cost-item">
+                        <div class="cost-header">
+                            <span class="cost-icon">🏢</span>
+                            <span class="cost-name">Venue Setup</span>
+                        </div>
+                        <div class="cost-details">
+                            <span class="cost-amount" th:text="${service.formatIndianCurrency(result.costBreakdown.venueSetup * result.costBreakdown.eventTypeMultiplier)}"></span>
+                            <span class="cost-percent" th:text="${#numbers.formatDecimal(result.costBreakdown.venuePercentage, 1, 1)} + '%'"></span>
+                        </div>
+                    </div>
+
+                    <div class="cost-item">
+                        <div class="cost-header">
+                            <span class="cost-icon">📋</span>
+                            <span class="cost-name">Miscellaneous</span>
+                        </div>
+                        <div class="cost-details">
+                            <span class="cost-amount" th:text="${service.formatIndianCurrency(result.costBreakdown.miscellaneous * result.costBreakdown.eventTypeMultiplier)}"></span>
+                            <span class="cost-percent" th:text="${#numbers.formatDecimal(result.costBreakdown.miscPercentage, 1, 1)} + '%'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="total-cost">
+                    <span class="total-label">💰 Total Estimated Cost</span>
+                    <span class="total-amount" th:text="${service.formatIndianCurrency(result.costBreakdown.totalCost)}"></span>
+                </div>
+
+                <div class="multiplier-info">
+                    <span th:text="'Event Type Multiplier: ' + ${#numbers.formatDecimal(result.costBreakdown.eventTypeMultiplier, 1, 1)} + 'x'"></span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Prices are estimates based on average market rates in India. Final costs may vary.</p>
+        </footer>
+    </div>
+</body>
+</html>
